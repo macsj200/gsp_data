@@ -1,23 +1,25 @@
-from bs4 import BeautifulSoup
-import requests
 import json
+from soup_helpers import get_soup_for_url
 
-i = 1
-name_to_id = {}
-id_to_name = {}
-while True:
-  url = 'https://www.elitegsp.com/posts/?id={}'.format(i)
-  print('Fetch', url)
-  r = requests.get(url)
-  soup = BeautifulSoup(r.text, 'html.parser')
+def fetch_name_for_id(id):
+  url = 'https://www.elitegsp.com/posts/?id={}'.format(id)
+  soup = get_soup_for_url(url)
   title = soup.find(id='posts_title')
   if title:
     character_name = title.text.split("'")[0]
-    name_to_id[character_name] = i
-    id_to_name[i] = character_name
-    i = i + 1
-  else:
-    break
+  return character_name
+
+name_to_id = {}
+id_to_name = {}
+
+main_soup = get_soup_for_url('https://www.elitegsp.com/posts/')
+for option in main_soup.find(id='posts_dropbox').find_all('option'):
+  if option.text == 'All Posts':
+    continue
+  id = option['value'].split('=')[1]
+  name = fetch_name_for_id(id)
+  name_to_id[name] = id
+  id_to_name[id] = name
 
 with open('mappings/name_to_id.json', 'w') as f:
   f.write(json.dumps(name_to_id))
